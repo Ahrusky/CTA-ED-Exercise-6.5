@@ -21,6 +21,11 @@ In this tutorial, you will learn how to:
 Note: Adapts from tutorials by Chris Bail [here](https://cbail.github.io/textasdata/word2vec/rmarkdown/word2vec.html) and Julia Silge [here](https://juliasilge.com/blog/tidy-word-vectors/) and Emil Hvitfeldt and Julia Silge [here](https://smltar.com/).
 
 ## Setup 
+```{r}
+#install packages
+install.packages('text2vec')
+install.packages('widyr')
+```
 
 ```{r, message=F}
 library(tidyverse) # loads dplyr, ggplot2, and others
@@ -31,11 +36,12 @@ library(text2vec) # for word embedding implementation
 library(widyr) # for reshaping the text data
 library(irlba) # for svd
 library(umap) # for dimensionality reduction
+library(RSpectra)
 ```
 
 We begin by reading in the data. These data come from a sample of 1m tweets by elected UK MPs over the period 2017-2019. The data contain just the name of the MP-user, the text of the tweet, and the MP's party. We then just add an ID variable called "postID."
 
-```{r}
+```{r, eval=F}
 twts_sample <- readRDS("data/wordembed/twts_corpus_sample.rds")
 
 #create tweet id
@@ -45,9 +51,11 @@ twts_sample$postID <- row.names(twts_sample)
 
 If you're working on this document from your own computer ("locally") you can download the tweets sample data in the following way:
 
-```{r, eval = F}
-
+```{r}
+#dowload your local data
 twts_sample <- readRDS(gzcon(url("https://github.com/cjbarrie/CTA-ED/blob/main/data/wordembed/twts_corpus_sample.rds?raw=true")))
+#create tweet id
+twts_sample$postID <- row.names(twts_sample)
 ```
 
 ## Word vectors via SVD
@@ -71,7 +79,7 @@ After this, we make a unique ID for the particular ngram we create for each post
 You can see the resulting output below.
 
 ```{r, eval = F}
-
+names(twts_sample)
 #create context window with length 6
 tidy_skipgrams <- twts_sample %>%
     unnest_tokens(ngram, tweet, token = "ngrams", n = 6) %>%
@@ -83,6 +91,7 @@ head(tidy_skipgrams, n=20)
 ```
 
 ```{r, echo=F}
+#dont run top section
 load("data/wordembed/tidy_skipgrams.RData")
 head(tidy_skipgrams, n=20)
 ```
@@ -174,7 +183,7 @@ pmi_matrix <- normalized_prob %>%
 #remove missing data
 pmi_matrix@x[is.na(pmi_matrix@x)] <- 0
 #run SVD
-pmi_svd <- irlba(pmi_matrix, 256, maxit = 500)
+pmi_svd <- svds(pmi_matrix, 256, maxit = 500)
 
 glimpse(pmi_matrix)
 
@@ -191,6 +200,7 @@ pmi_matrix@x[is.na(pmi_matrix@x)] <- 0
 
 glimpse(pmi_matrix)
 
+#LEFT OFF HERE
 ```
 
 Notice here that we are setting the vector size to equal 256. This just means that we have a vector length of 256 for any given word. 
